@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rama's Journey — The Ramayana Route</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --saffron: #E8651A;
+    --gold: #C9973A;
+    --deep-gold: #8B6914;
+    --cream: #F5EDD8;
+    --dark: #1A1108;
+    --muted: #7A5C2E;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--dark);
+    color: var(--cream);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    text-align: center;
+    padding: 44px 24px 28px;
+    border-bottom: 1px solid rgba(201,151,58,0.2);
+  }
+  .om { font-size: 2rem; color: var(--saffron); display: block; margin-bottom: 10px; animation: fadeUp 0.7s ease both 0.1s; }
+  h1 { font-family: 'Cinzel Decorative', serif; font-size: clamp(1.3rem, 4vw, 2.2rem); color: var(--gold); letter-spacing: 0.05em; line-height: 1.25; animation: fadeUp 0.7s ease both 0.25s; }
+  .subtitle { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; margin-top: 9px; animation: fadeUp 0.7s ease both 0.4s; }
+  .distance-badge { display: inline-block; margin-top: 14px; padding: 5px 16px; border: 1px solid var(--deep-gold); border-radius: 2px; font-size: 0.75rem; color: var(--gold); letter-spacing: 0.14em; font-family: 'Cinzel', serif; animation: fadeUp 0.7s ease both 0.55s; }
+  .map-wrapper { padding: 28px 20px 0; max-width: 920px; margin: 0 auto; animation: fadeUp 0.7s ease both 0.7s; }
+  .map-frame { position: relative; border: 1px solid rgba(201,151,58,0.3); border-radius: 4px; overflow: hidden; box-shadow: 0 0 50px rgba(232,101,26,0.07); }
+  #map { width: 100%; height: 480px; }
+  .map-corner { position: absolute; width: 16px; height: 16px; border-color: var(--gold); border-style: solid; opacity: 0.55; z-index: 500; pointer-events: none; }
+  .map-corner.tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+  .map-corner.tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+  .map-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+  .map-corner.br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+  .stops-section { max-width: 920px; margin: 36px auto 0; padding: 0 20px; animation: fadeUp 0.7s ease both 0.85s; }
+  .stops-heading { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(201,151,58,0.12); }
+  .stops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 10px; }
+  .stop-card { display: flex; align-items: flex-start; gap: 12px; padding: 13px 15px; background: rgba(255,255,255,0.025); border: 1px solid rgba(201,151,58,0.1); border-radius: 3px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+  .stop-card:hover { border-color: rgba(201,151,58,0.38); background: rgba(201,151,58,0.04); }
+  .stop-number { font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--saffron); background: rgba(232,101,26,0.1); border: 1px solid rgba(232,101,26,0.2); border-radius: 2px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 600; }
+  .stop-info { flex: 1; }
+  .stop-name { font-family: 'Cinzel', serif; font-size: 0.79rem; color: var(--gold); font-weight: 600; line-height: 1.3; }
+  .stop-modern { font-size: 0.76rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+  .stop-coords { font-size: 0.67rem; color: rgba(122,92,46,0.65); margin-top: 3px; font-family: 'Courier New', monospace; }
+  .share-section { max-width: 920px; margin: 28px auto 0; padding: 0 20px 44px; animation: fadeUp 0.7s ease both 1s; }
+  .share-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(201,151,58,0.18); border-radius: 4px; padding: 18px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .share-label { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); flex: 1; min-width: 160px; }
+  .share-label span { display: block; font-family: 'Crimson Pro', serif; font-size: 0.92rem; color: var(--cream); letter-spacing: 0; text-transform: none; margin-top: 3px; font-style: italic; }
+  .btn-group { display: flex; gap: 9px; flex-wrap: wrap; }
+  .btn { padding: 8px 18px; font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 2px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; border: none; }
+  .btn-primary { background: var(--saffron); color: white; }
+  .btn-primary:hover { background: #cf5a15; }
+  .btn-secondary { background: transparent; color: var(--gold); border: 1px solid var(--deep-gold); }
+  .btn-secondary:hover { background: rgba(201,151,58,0.09); }
+  .btn-outline { background: transparent; color: var(--muted); border: 1px solid rgba(122,92,46,0.35); font-size: 0.65rem; }
+  .btn-outline:hover { color: var(--cream); border-color: var(--muted); }
+  .divider { max-width: 920px; margin: 28px auto 0; padding: 0 20px; display: flex; align-items: center; gap: 10px; }
+  .divider-line { flex: 1; height: 1px; background: rgba(201,151,58,0.13); }
+  .divider-dot { width: 5px; height: 5px; background: var(--deep-gold); transform: rotate(45deg); opacity: 0.45; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--gold); color: var(--dark); padding: 9px 22px; border-radius: 2px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.1em; transition: transform 0.3s ease; z-index: 9999; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .leaflet-popup-content-wrapper { background: #1e1508 !important; border: 1px solid rgba(201,151,58,0.4) !important; border-radius: 3px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important; }
+  .leaflet-popup-tip { background: #1e1508 !important; }
+  .leaflet-popup-content { color: var(--cream) !important; font-family: 'Crimson Pro', serif; margin: 10px 14px !important; }
+  .popup-name { font-family: 'Cinzel', serif; font-size: 0.82rem; color: var(--gold); font-weight: 600; }
+  .popup-modern { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-top: 2px; }
+  .popup-event { font-size: 0.82rem; color: var(--cream); margin-top: 5px; line-height: 1.4; }
+  .popup-coords { font-size: 0.66rem; color: rgba(122,92,46,0.7); margin-top: 4px; font-family: monospace; }
+  .leaflet-control-attribution { background: rgba(20,12,3,0.75) !important; color: rgba(122,92,46,0.6) !important; font-size: 10px !important; }
+  .leaflet-control-attribution a { color: var(--muted) !important; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 600px) { #map { height: 360px; } .stops-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="om">ॐ</span>
+  <h1>Rama's Journey</h1>
+  <div class="subtitle">Tracing the Ramayana across the Indian Subcontinent</div>
+  <div class="distance-badge">~3,000 km &nbsp;·&nbsp; 14 Years &nbsp;·&nbsp; 10 Sacred Stops</div>
+</header>
+
+<div class="map-wrapper">
+  <div class="map-frame">
+    <div class="map-corner tl"></div>
+    <div class="map-corner tr"></div>
+    <div class="map-corner bl"></div>
+    <div class="map-corner br"></div>
+    <div id="map"></div>
+  </div>
+</div>
+
+<div class="stops-section">
+  <div class="stops-heading">The Sacred Stops — Click any card to zoom on map</div>
+  <div class="stops-grid" id="stopsGrid"></div>
+</div>
+
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-dot"></div>
+  <div class="divider-line"></div>
+</div>
+
+<div class="share-section">
+  <div class="share-box">
+    <div class="share-label">
+      Share this map
+      <span>Send Rama's full journey to friends &amp; family</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="shareWhatsApp()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </button>
+      <button class="btn btn-secondary" onclick="copyLink()">Copy Link</button>
+      <button class="btn btn-outline" onclick="openGoogleMaps()">Open in Google Maps ↗</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const stops = [
+  { n:1,  name:"Ayodhya",         modern:"Ayodhya, Uttar Pradesh",          lat:26.7922, lng:82.1998, event:"Start of exile. Rama, Sita & Lakshmana leave the kingdom. The Sarayu River still flows here.",                                       kanda:"Ayodhya Kanda" },
+  { n:2,  name:"Shringaverapura", modern:"Sringverpur, near Prayagraj",      lat:25.5907, lng:81.6405, event:"Nishada king Guha ferries Rama across the Ganga. Excavations by Prof. B.B. Lal found settlements from 800 BCE.",                    kanda:"Ayodhya Kanda" },
+  { n:3,  name:"Prayaga",         modern:"Triveni Sangam, Prayagraj",        lat:25.4358, lng:81.8463, event:"Rama visits Sage Bharadwaja's ashram at the sacred confluence of Ganga & Yamuna. Site of the Kumbh Mela.",                          kanda:"Ayodhya Kanda" },
+  { n:4,  name:"Chitrakoot",      modern:"Chitrakoot, MP/UP Border",         lat:25.2006, lng:80.8957, event:"Rama, Sita & Lakshmana settle here. Bharata arrives to plead. Rama refuses & gives his sandals as symbol of authority.",            kanda:"Ayodhya Kanda" },
+  { n:5,  name:"Dandakaranya",    modern:"Central India Forest Region",      lat:20.9374, lng:81.0000, event:"Rama spends years protecting sages. 14,000 rakshasas killed in the Janasthana battle. Spans MP, Chhattisgarh & Maharashtra.",       kanda:"Aranya Kanda"  },
+  { n:6,  name:"Panchavati",      modern:"Nashik, Maharashtra",              lat:20.0063, lng:73.7900, event:"On the Godavari banks. Shurpanakha disfigured here. Ravana abducts Sita using the golden deer deception.",                          kanda:"Aranya Kanda"  },
+  { n:7,  name:"Kishkindha",      modern:"Hampi, Karnataka",                 lat:15.3350, lng:76.4600, event:"Rama meets Hanuman & allies with Sugriva. UNESCO World Heritage Site. Boulder landscape matches Valmiki's descriptions exactly.",    kanda:"Kishkindha Kanda" },
+  { n:8,  name:"Rameshwaram",     modern:"Rameshwaram, Tamil Nadu",          lat:9.28760, lng:79.3129, event:"Nala builds the floating stone bridge. Ramanathaswamy Temple — one of the 12 Jyotirlingas.",                                        kanda:"Yuddha Kanda"  },
+  { n:9,  name:"Ram Setu",        modern:"Adam's Bridge, Palk Strait",       lat:9.13000, lng:79.0700, event:"48-km limestone shoal chain confirmed by NASA satellite imagery. Walkable land connection broke in a 1480 CE cyclone.",              kanda:"Yuddha Kanda"  },
+  { n:10, name:"Lanka",           modern:"Sita Amman Temple, Sri Lanka",     lat:6.93320, lng:80.8105, event:"Where Sita was held captive in Ashok Vatika. Hanuman found her here. Part of Sri Lanka's official Ramayana Trail.",                kanda:"Yuddha Kanda"  }
+];
+
+// Init map with dark CartoDB tiles — no API key required
+const map = L.map('map', { center: [17, 79], zoom: 5 });
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+// Custom teardrop markers
+function makeIcon(num) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:28px;height:28px;background:#E8651A;border:2px solid #C9973A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.6);"><span style="transform:rotate(45deg);font-family:serif;font-size:10px;font-weight:700;color:white;">${num}</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -32]
+  });
+}
+
+const markers = [];
+
+stops.forEach((s, i) => {
+  const m = L.marker([s.lat, s.lng], { icon: makeIcon(s.n) })
+    .addTo(map)
+    .bindPopup(`
+      <div class="popup-name">${s.n}. ${s.name}</div>
+      <div class="popup-modern">${s.modern}</div>
+      <div class="popup-event">${s.event}</div>
+      <div class="popup-coords">${s.lat}°N · ${s.lng}°E &nbsp;·&nbsp; ${s.kanda}</div>
+    `, { maxWidth: 260 });
+  markers.push(m);
+});
+
+// Dashed route line
+L.polyline(stops.map(s => [s.lat, s.lng]), {
+  color: '#C9973A',
+  weight: 2,
+  opacity: 0.5,
+  dashArray: '6, 9'
+}).addTo(map);
+
+// Stop cards
+const grid = document.getElementById('stopsGrid');
+stops.forEach((s, i) => {
+  const card = document.createElement('div');
+  card.className = 'stop-card';
+  card.innerHTML = `
+    <div class="stop-number">${s.n}</div>
+    <div class="stop-info">
+      <div class="stop-name">${s.name}</div>
+      <div class="stop-modern">${s.modern}</div>
+      <div class="stop-coords">${s.lat}°N · ${s.lng}°E</div>
+    </div>`;
+  card.addEventListener('click', () => {
+    map.setView([s.lat, s.lng], 9, { animate: true });
+    setTimeout(() => markers[i].openPopup(), 400);
+    document.querySelector('.map-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  grid.appendChild(card);
+});
+
+function shareWhatsApp() {
+  const text = encodeURIComponent(
+    "🗺️ *Rama's Journey — The Ramayana Route*\n\nAll 10 sacred stops from Ayodhya to Lanka (~3,000 km) mapped:\n" +
+    window.location.href +
+    "\n\n📍 Ayodhya → Shringaverapura → Prayaga → Chitrakoot → Dandakaranya → Panchavati → Kishkindha → Rameshwaram → Ram Setu → Lanka\n\nJai Shri Ram 🙏"
+  );
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+
+function copyLink() {
+  const url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied ✓'));
+  } else {
+    const el = document.createElement('textarea');
+    el.value = url; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast('Link copied ✓');
+  }
+}
+
+function openGoogleMaps() {
+  window.open('https://www.google.com/maps/dir/Ayodhya,UP/Shringverpur,UP/Prayagraj,UP/Chitrakoot,MP/Nashik,Maharashtra/Hampi,Karnataka/Rameswaram,Tamil+Nadu/Nuwara+Eliya,Sri+Lanka', '_blank');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
